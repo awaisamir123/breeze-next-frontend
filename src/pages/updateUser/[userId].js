@@ -1,20 +1,19 @@
-import ApplicationLogo from '@/components/ApplicationLogo'
 import AuthCard from '@/components/AuthCard'
 import AuthValidationErrors from '@/components/AuthValidationErrors'
 import Button from '@/components/Button'
 import GuestLayout from '@/components/Layouts/GuestLayout'
 import Input from '@/components/Input'
 import Label from '@/components/Label'
-import Link from 'next/link'
 import { useAuth } from '@/hooks/auth'
 import { useState } from 'react'
+// import axios from '@/lib/axios'
+import { useEffect } from 'react'
 
-const Register = () => {
-    const { register } = useAuth({
+const updateUser = props => {
+    const { updateUser, getUserData } = useAuth({
         middleware: 'auth',
-        redirectIfAuthenticated: '/dashboard',
+        userId: props?.data,
     })
-
     const [name, setName] = useState('')
     const [firstname, setFirstname] = useState('')
     const [lastname, setLastname] = useState('')
@@ -22,33 +21,41 @@ const Register = () => {
     const [password, setPassword] = useState('')
     const [password_confirmation, setPasswordConfirmation] = useState('')
     const [errors, setErrors] = useState([])
+    useEffect(() => {
+        if (getUserData?.data) {
+            setName(getUserData?.data?.name)
+            setFirstname(getUserData?.data?.firstname)
+            setLastname(getUserData?.data?.lastname)
+            setEmail(getUserData?.data?.email)
+        }
+    }, [getUserData])
 
     const submitForm = event => {
         event.preventDefault()
-
-        register({
-            name,
-            firstname,
-            lastname,
-            email,
-            password,
-            password_confirmation,
-            setErrors,
-        })
+        if (getUserData?.data?.id) {
+            updateUser({
+                name,
+                firstname,
+                lastname,
+                email,
+                password,
+                password_confirmation,
+                setErrors,
+                id: getUserData.data.id,
+            })
+        }
     }
 
     return (
         <GuestLayout>
-            <AuthCard
-                logo={
-                    <Link href="/">
-                        <a>
-                            <ApplicationLogo className="w-20 h-20 fill-current text-gray-500" />
-                        </a>
-                    </Link>
-                }>
+            <AuthCard>
                 {/* Validation Errors */}
                 <AuthValidationErrors className="mb-4" errors={errors} />
+                <div className="flex  justify-center">
+                    <h4 className="font-medium leading-tight text-2xl mt-0 mb-2 text-black-600">
+                        Update User
+                    </h4>
+                </div>
 
                 <form onSubmit={submitForm}>
                     {/* Name */}
@@ -141,18 +148,26 @@ const Register = () => {
                     </div>
 
                     <div className="flex items-center justify-end mt-4">
-                        <Link href="/login">
+                        {/* <Link href="/login">
                             <a className="underline text-sm text-gray-600 hover:text-gray-900">
                                 Already registered?
                             </a>
-                        </Link>
+                        </Link> */}
 
-                        <Button className="ml-4">Register</Button>
+                        <Button className="ml-4">Update User</Button>
                     </div>
                 </form>
             </AuthCard>
         </GuestLayout>
     )
 }
+export async function getServerSideProps(context) {
+    const { userId } = await context.query
+    return {
+        props: {
+            data: userId || null,
+        },
+    }
+}
 
-export default Register
+export default updateUser

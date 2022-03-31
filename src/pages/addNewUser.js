@@ -1,18 +1,15 @@
-import ApplicationLogo from '@/components/ApplicationLogo'
 import AuthCard from '@/components/AuthCard'
 import AuthValidationErrors from '@/components/AuthValidationErrors'
 import Button from '@/components/Button'
 import GuestLayout from '@/components/Layouts/GuestLayout'
 import Input from '@/components/Input'
 import Label from '@/components/Label'
-import Link from 'next/link'
 import { useAuth } from '@/hooks/auth'
 import { useState } from 'react'
 
-const Register = () => {
-    const { register } = useAuth({
+const addNewUser = () => {
+    const { addUser } = useAuth({
         middleware: 'auth',
-        redirectIfAuthenticated: '/dashboard',
     })
 
     const [name, setName] = useState('')
@@ -26,7 +23,7 @@ const Register = () => {
     const submitForm = event => {
         event.preventDefault()
 
-        register({
+        addUser({
             name,
             firstname,
             lastname,
@@ -39,16 +36,14 @@ const Register = () => {
 
     return (
         <GuestLayout>
-            <AuthCard
-                logo={
-                    <Link href="/">
-                        <a>
-                            <ApplicationLogo className="w-20 h-20 fill-current text-gray-500" />
-                        </a>
-                    </Link>
-                }>
+            <AuthCard>
                 {/* Validation Errors */}
                 <AuthValidationErrors className="mb-4" errors={errors} />
+                <div className="flex  justify-center">
+                    <h4 className="font-medium leading-tight text-2xl mt-0 mb-2 text-black-600">
+                        New User
+                    </h4>
+                </div>
 
                 <form onSubmit={submitForm}>
                     {/* Name */}
@@ -141,13 +136,7 @@ const Register = () => {
                     </div>
 
                     <div className="flex items-center justify-end mt-4">
-                        <Link href="/login">
-                            <a className="underline text-sm text-gray-600 hover:text-gray-900">
-                                Already registered?
-                            </a>
-                        </Link>
-
-                        <Button className="ml-4">Register</Button>
+                        <Button className="ml-4">Add User</Button>
                     </div>
                 </form>
             </AuthCard>
@@ -155,4 +144,4 @@ const Register = () => {
     )
 }
 
-export default Register
+export default addNewUser

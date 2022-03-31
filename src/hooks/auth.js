@@ -3,9 +3,12 @@ import axios from '@/lib/axios'
 import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 
-export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
+export const useAuth = ({
+    middleware,
+    redirectIfAuthenticated,
+    userId,
+} = {}) => {
     const router = useRouter()
-
     const { data: user, error, revalidate } = useSWR('/api/user', () =>
         axios
             .get('/api/user')
@@ -33,7 +36,63 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
                 setErrors(Object.values(error.response.data.errors).flat())
             })
     }
+    const addUser = async ({ setErrors, ...props }) => {
+        await csrf()
 
+        setErrors([])
+
+        axios
+            .post('/api/site-user', props)
+            .then(() => router.push('/userList'))
+            .catch(error => {
+                if (error.response.status !== 422) throw error
+
+                setErrors(Object.values(error.response.data.errors).flat())
+            })
+    }
+    const deleteUser = async ({ id }) => {
+        await csrf()
+        axios
+            .delete(`/api/site-user/${id}`)
+            .then(() => revalidate())
+            .catch(() => {})
+    }
+    const updateUser = async ({ setErrors, id, ...props }) => {
+        await csrf()
+
+        setErrors([])
+
+        axios
+            .patch(`/api/site-user/${id}`, props)
+            .then(() => router.push('/userList'))
+            .catch(error => {
+                if (error.response.status !== 422) throw error
+
+                setErrors(Object.values(error.response.data.errors).flat())
+            })
+    }
+    const { data: getUsers } = useSWR('/api/site-user', () =>
+        axios
+            .get('/api/site-user')
+            .then(res => res.data)
+            .catch(error => {
+                if (error.response.status !== 409) throw error
+
+                router.push('/userList')
+            }),
+    )
+    const { data: getUserData } = useSWR(['/api/site-user/', userId], () =>
+        axios
+            .get(`/api/site-user/${userId}`)
+            .then(res => {
+                return res.data
+            })
+            .catch(error => {
+                if (error.response.status !== 409) throw error
+
+                router.push('/userList')
+            }),
+    )
     const login = async ({ setErrors, setStatus, ...props }) => {
         await csrf()
 
@@ -74,7 +133,9 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
 
         axios
             .post('/reset-password', { token: router.query.token, ...props })
-            .then(response => router.push('/login?reset=' + btoa(response.data.status)))
+            .then(response =>
+                router.push('/login?reset=' + btoa(response.data.status)),
+            )
             .catch(error => {
                 if (error.response.status != 422) throw error
 
@@ -89,7 +150,7 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
     }
 
     const logout = async () => {
-        if (! error) {
+        if (!error) {
             await axios.post('/logout')
 
             revalidate()
@@ -99,7 +160,8 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
     }
 
     useEffect(() => {
-        if (middleware === 'guest' && redirectIfAuthenticated && user) router.push(redirectIfAuthenticated)
+        if (middleware === 'guest' && redirectIfAuthenticated && user)
+            router.push(redirectIfAuthenticated)
         if (middleware === 'auth' && error) logout()
     }, [user, error])
 
@@ -111,5 +173,10 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
         resetPassword,
         resendEmailVerification,
         logout,
+        addUser,
+        getUsers,
+        getUserData,
+        updateUser,
+        deleteUser,
     }
 }
